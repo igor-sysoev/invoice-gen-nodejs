@@ -3,37 +3,15 @@ const fs = require("fs");
 
 const { PDFDocument, StandardFonts, rgb } = pdfLib;
 
-const INVOICE_NO = 938;
-const NAME_TO = "Ahmed";
-const NAME_FROM = "Yaser";
-const ADRESS = "2992 Punavouri, helsinki, Finland";
-const INVOICE_DATE = "23/7";
-const DUE_DATE = "14 days";
-
-const OUR_REFERENCE = "Freelance Instractor";
-
-const DESCRIPTION = "Online Ocurse - English";
-
-const NO_HOURS = "20";
-
-const PRICE_HOUR = "10";
-
-const VAT_PERCENT = "24";
-
-const VAT_AMOUNT = "81.45";
-
-const TOTAL = "101";
-
-const CONTACT_PHONE = "0465726013";
-
-const CONTACT_EMAIL = "test@gmail.com";
-
-const linePath = "M730,297L0,295";
+var XLSX = require("xlsx");
 
 // INVOICE TO //
 const drawInvoiceTo = (
   page,
-  { TITLE_TEXT_Y, fontOptions, marginLeft, height, lineHeight }
+  { TITLE_TEXT_Y, fontOptions, marginLeft, height, lineHeight },
+  NAME_TO,
+  NAME_FROM,
+  ADRESS
 ) => {
   // INVOICE TO
 
@@ -98,7 +76,10 @@ const drawHeader = (
 
 const drawRightSideInfo = (
   page,
-  { TITLE_TEXT_Y, fontOptions, marginLeft, width, lineHeight }
+  { TITLE_TEXT_Y, fontOptions, marginLeft, width, lineHeight },
+  INVOICE_DATE,
+  DUE_DATE,
+  OUR_REFERENCE
 ) => {
   const y = TITLE_TEXT_Y - 25;
   const x = width - 250;
@@ -172,7 +153,12 @@ const drawInvoiceInfoHeaders = (
 
 const drawInvoiceInfo = (
   page,
-  { TITLE_TEXT_Y, fontOptions, marginLeft, width, lineHeight }
+  { TITLE_TEXT_Y, fontOptions, marginLeft, width, lineHeight },
+  DESCRIPTION,
+  NO_HOURS,
+  PRICE_HOUR,
+  VAT_PERCENT,
+  TOTAL
 ) => {
   const y = TITLE_TEXT_Y - 180;
   const x = marginLeft;
@@ -187,13 +173,35 @@ const drawInvoiceInfo = (
 };
 
 // CREATE FILE !!
-const createFile = async () => {
+const createFile = async (arr) => {
   const pdfDoc = await PDFDocument.create();
   const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
 
   const form = pdfDoc.getForm();
 
   const page = pdfDoc.addPage();
+
+  console.log(arr);
+  const [
+    INVOICE_NO,
+    NAME_TO,
+    NAME_FROM,
+    ADRESS,
+    INVOICE_DATE,
+    DUE_DATE,
+    OUR_REFERENCE,
+    DESCRIPTION,
+    PERIOD,
+    NO_HOURS,
+    PRICE_HOUR,
+    VAT_PERCENT,
+    VAT_AMOUNT,
+    TOTAL,
+    CONTACT_PHONE,
+    CONTACT_EMAIL,
+    NOTES,
+    PAYMENT,
+  ] = arr;
 
   const { width, height } = page.getSize();
 
@@ -221,19 +229,47 @@ const createFile = async () => {
 
   drawHeader(page, options);
 
-  drawInvoiceTo(page, options);
+  drawInvoiceTo(page, options, NAME_TO, NAME_FROM, ADRESS);
 
-  drawRightSideInfo(page, options);
+  drawRightSideInfo(page, options, INVOICE_DATE, OUR_REFERENCE);
 
   drawInvoiceInfoHeaders(page, options);
 
-  drawInvoiceInfo(page, options);
+  drawInvoiceInfo(
+    page,
+    options,
+    DESCRIPTION,
+    NO_HOURS,
+    PRICE_HOUR,
+    VAT_PERCENT,
+    TOTAL
+  );
 
   const pdfBytes = await pdfDoc.save();
 
-  fs.writeFile("./test.pdf", pdfBytes, (err) => {
+  fs.writeFile("./result/invoice_" + Date.now() + ".pdf", pdfBytes, (err) => {
     console.log(err);
   });
 };
 
-createFile();
+const file = XLSX.readFile("invoices.xlsx");
+
+file.SheetNames.forEach((sheetName) => {
+  const XL_row_object = XLSX.utils.sheet_to_row_object_array(
+    file.Sheets[sheetName]
+  );
+
+  XL_row_object.forEach((obj, i) => {
+    if (i !== 0) {
+      const arr = [];
+      for (const key in obj) {
+        let val = obj[key];
+
+        if (typeof val === "number") val = val.toString();
+        console.log(val);
+        arr.push(val);
+      }
+      createFile(arr);
+    }
+  });
+});

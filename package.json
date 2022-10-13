@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/supasus/invoice-gen-nodejs#readme",
   "dependencies": {
-    "pdf-lib": "^1.17.1"
+    "pdf-lib": "^1.17.1",
+    "xlsx": "^0.18.5"
   }
 }
