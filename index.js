@@ -1,6 +1,7 @@
 const pdfLib = require("pdf-lib");
 const fs = require("fs");
 
+const path = require("path");
 const { PDFDocument, StandardFonts, rgb } = pdfLib;
 
 var XLSX = require("xlsx");
@@ -247,10 +248,26 @@ const createFile = async (arr) => {
 
   const pdfBytes = await pdfDoc.save();
 
-  fs.writeFile("./result/invoice_" + Date.now() + ".pdf", pdfBytes, (err) => {
-    console.log(err);
-  });
+  fs.writeFileSync(
+    "./result/1invoice_" + Date.now() + ".pdf",
+    pdfBytes,
+    (err) => {
+      console.log(err);
+    }
+  );
 };
+
+// Clear the destination folder
+
+fs.readdir("./result", (err, files) => {
+  for (const file of files) {
+    fs.unlink(path.join("./result", file), (err) => {
+      console.log(err);
+    });
+  }
+});
+
+// Read The Spreadsheet
 
 const file = XLSX.readFile("invoices.xlsx");
 
@@ -259,17 +276,18 @@ file.SheetNames.forEach((sheetName) => {
     file.Sheets[sheetName]
   );
 
-  XL_row_object.forEach((obj, i) => {
+  XL_row_object.forEach(async (obj, i) => {
     if (i !== 0) {
       const arr = [];
       for (const key in obj) {
         let val = obj[key];
 
         if (typeof val === "number") val = val.toString();
-        console.log(val);
+
         arr.push(val);
       }
-      createFile(arr);
+
+      const res = await createFile(arr);
     }
   });
 });
